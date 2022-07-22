@@ -23,7 +23,6 @@ export const main = Reach.App(() => {
     });
     
     Alice.publish(meetingEndTime);
-    const invariantCondition = true;
     
     const users = new Set();
     
@@ -31,7 +30,7 @@ export const main = Reach.App(() => {
         beforeMeetingEndTime,
         usersCount
     ] = parallelReduce([true, 0])
-        .invariant( invariantCondition )
+        .invariant( balance() == 0 )
         .while( beforeMeetingEndTime )
         .api(Bob.attachToContract,
             (_) => { const _ = true; },
