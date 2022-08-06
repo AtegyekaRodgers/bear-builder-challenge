@@ -36,6 +36,7 @@ export const main = Reach.App(() => {
             (_) => { const _ = true; },
             (_) => 0,
             ((citizenIndex, respond) => {
+                Alice.interact.log("API.Bob.attachToContract invoked.");
                 if (usersCount < 5){
                     const exists = users.member(this);
                     if (exists){
