@@ -17,6 +17,28 @@ const params = { nftId, nftValue, numberOfTickets, priceOfOneTicket };
 
 let done = false;
 const gamers = [];
+let ticketsForSale = [1,2,3,4,5,6,7,8];
+
+const computeRandomTicketNumber = () => {
+    if(!ticketsForSale.some(n => n > 0)){
+        return 0;
+    }
+    if(ticketsForSale.filter(n => n > 0).length === 1){
+        const oneLeft = ticketsForSale.find(n => n > 0);
+        ticketsForSale[oneLeft-1] = 0;
+        return oneLeft
+    } 
+    let found = false;
+    while(!found){
+      const randomNum = Math.floor(Math.random() * 8) + 1;
+      if(ticketsForSale[randomNum-1]){
+        found = true;
+        ticketsForSale[randomNum-1] = 0;
+        return randomNum;
+      }
+    }
+}
+
 const startGamers = async () => {
     const runGamer = async (who) => {
         const accB = await stdlib.newTestAccount(startingBalance);
@@ -50,27 +72,6 @@ const startGamers = async () => {
 };
 
 const ctcA = accA.contract(backend);
-let ticketsForSale = [1,2,3,4,5,6,7,8];
-
-const computeRandomTicketNumber = () => {
-    if(!ticketsForSale.some(n => n > 0)){
-        return 0;
-    }
-    if(ticketsForSale.filter(n => n > 0).length === 1){
-        const oneLeft = ticketsForSale.find(n => n > 0);
-        ticketsForSale[oneLeft-1] = 0;
-        return oneLeft
-    } 
-    let found = false;
-    while(!found){
-      const randomNum = Math.floor(Math.random() * 8) + 1;
-      if(ticketsForSale[randomNum-1]){
-        found = true;
-        ticketsForSale[randomNum-1] = 0;
-        return randomNum;
-      }
-    }
-}
 
 await ctcA.p.Deployer({
     ...stdlib.hasRandom, 
