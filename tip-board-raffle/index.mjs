@@ -7,8 +7,8 @@ const startingBalance = stdlib.parseCurrency(100);
 console.log(`Creating Deployer's test account ...`);
 const accA = await stdlib.newTestAccount(startingBalance);
 
-console.log(`Creating the TBC Raffle NFT ...`);
-const tbcNFT = await stdlib.launchToken(accA, "tbcraffle", "TBC", { supply: 10 });
+console.log(`Creating the TBR Raffle NFT ...`);
+const tbcNFT = await stdlib.launchToken(accA, "tbcraffle", "TBR", { supply: 10 });
 const nftId = tbcNFT.id;
 const nftValue = stdlib.parseCurrency(4);
 const numberOfTickets = 8;
@@ -16,58 +16,58 @@ const priceOfOneTicket = 1;
 const params = { nftId, nftValue, numberOfTickets, priceOfOneTicket };
 
 let done = false;
-const bidders = [];
-const startBidders = async () => {
-    let bid = minBid;
-    const runBidder = async (who) => {
-        const inc = stdlib.parseCurrency(Math.random() * 10);
-        bid = bid.add(inc);
-
-        const acc = await stdlib.newTestAccount(startingBalance);
+const gamers = [];
+const startGamers = async () => {
+    const runGamer = async (who) => {
+        const accB = await stdlib.newTestAccount(startingBalance);
         acc.setDebugLabel(who);
-        await acc.tokenAccept(nftId);
-        bidders.push([who, acc]);
-        const ctc = acc.contract(backend, ctcCreator.getInfo());
-        const getBal = async () => stdlib.formatCurrency(await stdlib.balanceOf(acc));
+        await accB.tokenAccept(nftId);
+        gamers.push([who, accB]);
+        const ctcB = accB.contract(backend, ctcA.getInfo());
 
-        console.log(`${who} decides to bid ${stdlib.formatCurrency(bid)}.`);
-        console.log(`${who} balance before is ${await getBal()}`);
         try {
-            const [ lastBidder, lastBid ] = await ctc.apis.Bidder.bid(bid);
-            console.log(`${who} out bid ${lastBidder} who bid ${stdlib.formatCurrency(lastBid)}.`);
+            const ticketNum = await ctc.apis.Bob.buyTicket();
+            console.log(`Gamer: ${who} just purchased ticket number ${ticketNum}.`);
         } catch (e) {
-            console.log(`${who} failed to bid, because the auction is over`);
+            console.log(`Gamer: ${who} failed to buy a ticket`);
         }
         console.log(`${who} balance after is ${await getBal()}`);
     };
 
-    await runBidder('Alice');
-    await runBidder('Bob');
-    await runBidder('Claire');
+    await runGamer('Robert');
+    await runGamer('Gedion');
+    await runGamer('Nelson');
+    await runGamer('Kelen');
+    await runGamer('Aaron');
+    await runGamer('Zeporah');
+    await runGamer('Brian');
+    await runGamer('Timothy');
+    await runGamer('Osbert');
     while ( ! done ) {
         await stdlib.wait(1);
     }
 };
 
-const ctcCreator = accA.contract(backend);
-await ctcCreator.participants.Creator({
-    getSale: () => {
-        console.log(`Creator sets parameters of sale:`, params);
-        return params;
+const ctcA = accA.contract(backend);
+await ctcA.participants.Deployer({
+    ...stdlib.hasRandom, 
+    ...stdlib.hasConsoleLogger,
+    launchTipBoard: Fun([], Object({
+      nftId: Token,
+      nftValue: UInt,
+      numberOfTickets: UInt,
+      priceOfOneTicket: UInt,
+    })),
+    computeWinningNumber: Fun([], UInt),
+    showTicketPrice: Fun([UInt], Null),
+    computeRandomTicketNumber: Fun([], UInt),
+    seeTicketSale: Fun([Address], Null),
+    log: (data)=> {
+        stdlib.hasConsoleLogger.log(data);
     },
-    auctionReady: () => {
-        startBidders();
-    },
-    seeBid: (who, amt) => {
-        console.log(`Creator saw that ${stdlib.formatAddress(who)} bid ${stdlib.formatCurrency(amt)}.`);
-    },
-    showOutcome: (winner, amt) => {
-        console.log(`Creator saw that ${stdlib.formatAddress(winner)} won with ${stdlib.formatCurrency(amt)}`);
+    showOutcome: (winner, ticketNumber) => {
+        console.log(`Deployer saw that ${stdlib.formatAddress(winner)} won with ticket number ${ticketNumber}`);
     },
 });
 
-for ( const [who, acc] of bidders ) {
-    const [ amt, amtNFT ] = await stdlib.balancesOf(acc, [null, nftId]);
-    console.log(`${who} has ${stdlib.formatCurrency(amt)} ${stdlib.standardUnit} and ${amtNFT} of the NFT`);
-}
 done = true;

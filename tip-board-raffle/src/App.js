@@ -54,7 +54,7 @@ function App() {
 
             <div className="order-1 md:order-2">
                 <a className="flex items-center tracking-wide no-underline hover:no-underline font-bold text-gray-800 text-xl " href="#">
-                    <Icon path={ mdiAbacus } size={1} className={`my-auto inline-block text-current`}/>
+                    <Icon path={ mdiAbacus } size={1} className={`my-auto inline-block text-current mr-4`}/>
                     The Tip Board Raffle NFT
                 </a>
             </div>
@@ -88,7 +88,7 @@ function App() {
             
 
             <div className="w-full md:w-2/3 xl:w-1/4 p-6 flex flex-col">
-                oirioroioie
+                
             </div>
             
             
