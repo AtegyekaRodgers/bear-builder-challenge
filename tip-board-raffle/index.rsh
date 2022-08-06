@@ -12,15 +12,14 @@ export const main = Reach.App(() => {
         })),
         computeWinningNumber: Fun([], UInt),
         showTicketPrice: Fun([UInt], Null),
-        computeRandomTicketNumber: Fun([], UInt),
         showOutcome: Fun([Address, UInt], Null),
-        seeTicketSale: Fun([Address], Null),
+        seeTicketSale: Fun([Address, UInt], Null),
         log: Fun(true, Null),
     });
     const Bob = API('Bob', {
         // buy a ticket and receive your ticket number back, 
         // later we'll see if it's the winning number.
-        buyTicket: Fun([], UInt),
+        buyTicket: Fun([], Bool),
     });
     init();
 
@@ -52,17 +51,18 @@ export const main = Reach.App(() => {
         .invariant(balance(nftId) >= nftValue)
         .while(ticketsRemaining > 0)
         .api(Bob.buyTicket,
-            () => { const _ = true; },
-            () => priceOfOneTicket,
-            (notify) => {
-                const ticketNumber = Deployer.interact.computeRandomTicketNumber();
-                notify(ticketNumber);
+            (_) => { const _ = true; },
+            (_) => priceOfOneTicket,
+            (ticketNumber, respond) => {
+                respond(true);
+                
                 const who = this;
-                
                 //write this Address to the array of bought tickets
-                paidTickets.set(ticketNumber, who);
+                if(ticketNumber > 0){
+                  paidTickets.set(ticketNumber, who);
+                }
                 
-                Deployer.interact.seeTicketSale(who);
+                Deployer.interact.seeTicketSale(who, ticketNumber);
                 return [ticketsRemaining - 1];
             }
         ).timeout(absoluteTime(end), () => {
