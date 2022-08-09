@@ -1,9 +1,9 @@
-import React, { useState, useEffect, useRef } from 'react';
+
+import React, { useState } from 'react';
 import Icon from '@mdi/react';
 import {
   mdiHeartOutline,
   mdiAbacus,
-  mdiMenu,
   mdiAccountTie,
   mdiCartOutline,
 } from '@mdi/js';
@@ -11,6 +11,7 @@ import './App.css';
 import * as backend from './reach-build/index.main.mjs';
 import { loadStdlib } from '@reach-sh/stdlib';
 import { ALGO_WalletConnect as WalletConnect } from '@reach-sh/stdlib';
+import { Button, Input } from "@material-tailwind/react";
 
 const reach = loadStdlib({
   REACH_CONNECTOR_MODE: "ALGO-devnet",
@@ -30,14 +31,6 @@ reach.setWalletFallback(reach.walletFallback({
 }));
 
 const startingBalance = reach.parseCurrency(100);
-console.log(`Creating the TBR Raffle NFT ...`);
-const tbcNFT = await stdlib.launchToken(accA, "tbcraffle", "TBR", { supply: 4 });
-const nftId = tbcNFT.id;
-const nftValue = stdlib.parseCurrency(4);
-const numberOfTickets = 8;
-const priceOfOneTicket = 1;
-const params = { nftId, nftValue, numberOfTickets, priceOfOneTicket };
-let gamers = [];
 let ticketsForSale = [1,2,3,4,5,6,7,8];
 
 const computeRandomTicketNumber = () => {
@@ -72,14 +65,26 @@ const computeRandomTicketNumber = () => {
 
 function App() {
     const [contractInfo, setContractInfo] = useState({});
+    const [userName, setUserName] = useState("Unknown");
     
-    const deployContract = () => {
+    
+    const deployContract = async (who) => {
+        console.log(`${who} Creating Deployer's test account ...`);
+        const accA = await reach.newTestAccount(startingBalance);
         const ctcA = accA.contract(backend);
+        console.log(`${who} Creating the TBR Raffle NFT ...`);
+        const tbcNFT = await reach.launchToken(accA, "tbcraffle", "TBR", { supply: 4 });
+        const nftId = tbcNFT.id;
+        const nftValue = reach.parseCurrency(4);
+        const numberOfTickets = 8;
+        const priceOfOneTicket = 1;
+        const params = { nftId, nftValue, numberOfTickets, priceOfOneTicket };
         
         await ctcA.p.Deployer({
-            ...stdlib.hasRandom, 
-            ...stdlib.hasConsoleLogger,
-            launchTipBoard: () => ({nftId, nftValue, numberOfTickets, priceOfOneTicket}),
+            ...reach.hasRandom, 
+            ...reach.hasConsoleLogger,
+            nftId,
+            launchTipBoard: () => (params),
             showTicketPrice: () => {
                 console.log(`The price of each ticket is set to ${priceOfOneTicket}`);
             },
@@ -90,10 +95,10 @@ function App() {
                console.log(`Ticket number ${ticketNumber} sold to ${address}`);
             },
             log: (data)=> {
-                stdlib.hasConsoleLogger.log(data);
+                reach.hasConsoleLogger.log(data);
             },
             showOutcome: (winner, ticketNumber) => {
-                console.log(`Deployer saw that ${stdlib.formatAddress(winner)} won with ticket number ${ticketNumber}`);
+                console.log(`Deployer saw that ${reach.formatAddress(winner)} won with ticket number ${ticketNumber}`);
             },
         });
         
@@ -101,14 +106,15 @@ function App() {
     };
     
     const attachBuyTicket = async (who, contractInfo) => {
-        const accB = await stdlib.newTestAccount(startingBalance);
-        acc.setDebugLabel(who);
+        const accB = await reach.newTestAccount(startingBalance);
+        accB.setDebugLabel(who);
+        const nftId = await accB.p.Deployer.nftId;
         await accB.tokenAccept(nftId);
         const ctcB = accB.contract(backend, contractInfo);
         try {
             const ticketNum = computeRandomTicketNumber();
-            const ok = await ctc.a.Bob.buyTicket();
-            console.log(`Gamer: ${who} just purchased ticket number ${ticketNum}.`);
+            const ok = await ctcB.a.Bob.buyTicket();
+            console.log(`Gamer: ${who} just purchased ticket number ${ticketNum}. ok: ${ok}`);
         } catch (e) {
             console.log(`Gamer: ${who} failed to buy a ticket: ${e}`);
         }
@@ -156,8 +162,8 @@ function App() {
       </nav>
     
       <section className="bg-white py-8">
-        <div className="container mx-auto flex items-center flex-wrap pt-4 pb-12 border border-gray-300">
-            <div className="w-full md:w-1/3 xl:w-1/4 p-6 flex flex-col">
+        <div className="container mx-auto flex flex-start pt-4 pb-12 border border-gray-300">
+            <div className="w-full md:w-1/3 xl:w-1/4 p-6 flex flex-col flex-initial">
                 <a href="#">
                     <img className="hover:grow hover:shadow-lg" src="https://images.unsplash.com/photo-1550837368-6594235de85c?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=400&h=400&q=80"/>
                     <div className="pt-3 flex items-center justify-between">
@@ -167,13 +173,23 @@ function App() {
                 </a>
             </div>
             
-            
-
-            <div className="w-full md:w-2/3 xl:w-1/4 p-6 flex flex-col">
-                
+            <div className="w-full md:w-2/3 xl:w-1/4 p-2 flex flex-row flex-auto">
+                First, introduce yourself
+                <Input type="text" value={userName} onChange={(e) => setUserName(e.target.value)} label="What's your name ?"/>
+                <hr/>
+                <div> 
+                <Button onClick={()=>deployContract(userName)}> Deploy contract now </Button>
+                </div>
+                <hr/> 
+                OR
+                <hr/>
+                <div > 
+                    <Input type="text" value={contractInfo} onBlur={(e)=> setContractInfo(e.target.value)} label="Enter the contract info to attach" />
+                    <Button onClick={()=>attachBuyTicket(userName, contractInfo)}>Atteach to contract and buy ticket</Button>
+                </div>
+                <hr/>
+                <span> Contract info: { JSON.stringify(contractInfo) } </span>
             </div>
-            
-            
         </div>
       </section>
 

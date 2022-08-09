@@ -42,14 +42,14 @@ const computeRandomTicketNumber = () => {
 const startGamers = async () => {
     const runGamer = async (who) => {
         const accB = await stdlib.newTestAccount(startingBalance);
-        acc.setDebugLabel(who);
+        accB.setDebugLabel(who);
         await accB.tokenAccept(nftId);
         gamers.push([who, accB]);
         const ctcB = accB.contract(backend, ctcA.getInfo());
 
         try {
             const ticketNum = computeRandomTicketNumber();
-            const ok = await ctc.apis.Bob.buyTicket();
+            const ok = await ctcB.apis.Bob.buyTicket();
             console.log(`Gamer: ${who} just purchased ticket number ${ticketNum}.`);
         } catch (e) {
             console.log(`Gamer: ${who} failed to buy a ticket`);

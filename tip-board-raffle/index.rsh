@@ -4,6 +4,7 @@ export const main = Reach.App(() => {
     const Deployer = Participant('Deployer', {
         ...hasRandom,
         ...hasConsoleLogger,
+        nftId: Token,
         launchTipBoard: Fun([], Object({
           nftId: Token,
           nftValue: UInt,
