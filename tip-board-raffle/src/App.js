@@ -29,9 +29,91 @@ reach.setWalletFallback(reach.walletFallback({
   WalletConnect
 }));
 
+const startingBalance = reach.parseCurrency(100);
+console.log(`Creating the TBR Raffle NFT ...`);
+const tbcNFT = await stdlib.launchToken(accA, "tbcraffle", "TBR", { supply: 4 });
+const nftId = tbcNFT.id;
+const nftValue = stdlib.parseCurrency(4);
+const numberOfTickets = 8;
+const priceOfOneTicket = 1;
+const params = { nftId, nftValue, numberOfTickets, priceOfOneTicket };
+let gamers = [];
+let ticketsForSale = [1,2,3,4,5,6,7,8];
+
+const computeRandomTicketNumber = () => {
+    //if all tickets are already sold, return 0
+    if(!ticketsForSale.some(n => n > 0)){
+        return 0;
+    }
+    
+    //if only 1 ticket is remaining, return it
+    if(ticketsForSale.filter(n => n > 0).length === 1){
+        const oneLeft = ticketsForSale.find(n => n > 0);
+        ticketsForSale[oneLeft-1] = 0;
+        return oneLeft
+    } 
+    
+    //there still more than 1 tickets. Randomise to choose 1
+    let found = false;
+    while(!found){
+      //find the random number between 1 and 8
+      const randomNum = Math.floor(Math.random() * 8) + 1;
+      
+      //if the random ticket number is already sold, 
+      //randomise again until you find one available
+      if(ticketsForSale[randomNum-1]){
+        found = true;
+        ticketsForSale[randomNum-1] = 0;
+        return randomNum;
+      }
+      //no ticket number is sold more than once
+    }
+}
 
 function App() {
-
+    const [contractInfo, setContractInfo] = useState({});
+    
+    const deployContract = () => {
+        const ctcA = accA.contract(backend);
+        
+        await ctcA.p.Deployer({
+            ...stdlib.hasRandom, 
+            ...stdlib.hasConsoleLogger,
+            launchTipBoard: () => ({nftId, nftValue, numberOfTickets, priceOfOneTicket}),
+            showTicketPrice: () => {
+                console.log(`The price of each ticket is set to ${priceOfOneTicket}`);
+            },
+            computeWinningNumber: () => {
+                return Math.floor(Math.random() * 8) + 1;
+            },
+            seeTicketSale: (address, ticketNumber) => {
+               console.log(`Ticket number ${ticketNumber} sold to ${address}`);
+            },
+            log: (data)=> {
+                stdlib.hasConsoleLogger.log(data);
+            },
+            showOutcome: (winner, ticketNumber) => {
+                console.log(`Deployer saw that ${stdlib.formatAddress(winner)} won with ticket number ${ticketNumber}`);
+            },
+        });
+        
+        setContractInfo(ctcA.getInfo());
+    };
+    
+    const attachBuyTicket = async (who, contractInfo) => {
+        const accB = await stdlib.newTestAccount(startingBalance);
+        acc.setDebugLabel(who);
+        await accB.tokenAccept(nftId);
+        const ctcB = accB.contract(backend, contractInfo);
+        try {
+            const ticketNum = computeRandomTicketNumber();
+            const ok = await ctc.a.Bob.buyTicket();
+            console.log(`Gamer: ${who} just purchased ticket number ${ticketNum}.`);
+        } catch (e) {
+            console.log(`Gamer: ${who} failed to buy a ticket: ${e}`);
+        }
+    };
+    
   return (
     <div className="bg-white text-gray-600 work-sans leading-normal text-base tracking-normal">
       <nav id="header" className="w-full z-30 top-0 py-1 bg-blue-100">

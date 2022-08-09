@@ -16,7 +16,7 @@ const priceOfOneTicket = 1;
 const params = { nftId, nftValue, numberOfTickets, priceOfOneTicket };
 
 let done = false;
-const gamers = [];
+let gamers = [];
 let ticketsForSale = [1,2,3,4,5,6,7,8];
 
 const computeRandomTicketNumber = () => {
@@ -54,7 +54,6 @@ const startGamers = async () => {
         } catch (e) {
             console.log(`Gamer: ${who} failed to buy a ticket`);
         }
-        console.log(`${who} balance after is ${await getBal()}`);
     };
 
     await runGamer('Robert');
